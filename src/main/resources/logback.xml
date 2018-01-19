@@ -1,0 +1,20 @@
+<configuration>
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+
+    <logger name="reactor.ipc.netty" level="INFO" />
+    <logger name="reactor.ipc.netty.http.client.HttpClient" level="INFO" />
+    <logger name="reactor.ipc.netty.http.server.HttpServer" level="INFO" />
+
+    <root level="INFO">
+        <appender-ref ref="stdout"/>
+    </root>
+
+</configuration>
