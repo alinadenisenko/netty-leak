@@ -28,10 +28,9 @@ public class Application {
 
         SpringApplication.run(Application.class, args);
 
-
-
+        Unirest.setTimeouts(3000, 3000);
         List<Integer> range = IntStream
-                .rangeClosed(0, 2000)
+                .rangeClosed(0, 1000)
                 .boxed()
                 .collect(Collectors.toList());
 

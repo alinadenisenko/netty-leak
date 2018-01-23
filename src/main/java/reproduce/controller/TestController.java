@@ -1,12 +1,10 @@
 package reproduce.controller;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.NettyDataBuffer;
-import org.springframework.core.io.buffer.NettyDataBufferFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -18,7 +16,6 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.adapter.DefaultServerWebExchange;
 import org.springframework.web.server.i18n.AcceptHeaderLocaleContextResolver;
 import org.springframework.web.server.session.DefaultWebSessionManager;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.ipc.netty.NettyPipeline;
 import reactor.ipc.netty.http.client.HttpClient;
@@ -65,17 +62,22 @@ public class TestController {
 
         final DefaultHttpHeaders httpHeaders = new DefaultHttpHeaders();
         request.getHeaders().forEach(httpHeaders::set);
+        String transferEncoding = request.getHeaders().getFirst(HttpHeaders.TRANSFER_ENCODING);
+        boolean chunkedTransfer = "chunked".equalsIgnoreCase(transferEncoding);
+
+
 
         return this.httpClient.request(method, url, req -> {
             final HttpClientRequest proxyRequest = req.options(NettyPipeline.SendOptions::flushOnEach)
-                    .failOnClientError(false)
-                    .headers(httpHeaders);
-;
-            Flux<ByteBuf> map = request.getBody()
-                    .map(DataBuffer::asByteBuffer)
-                    .map(Unpooled::wrappedBuffer);
+                    .headers(httpHeaders)
+                    .chunkedTransfer(chunkedTransfer)
+                    .failOnClientError(false);
+
+
             return proxyRequest.sendHeaders() //I shouldn't need this
-                    .send(map);
+                    .send(request.getBody()
+                            .map(DataBuffer::asByteBuffer)
+                            .map(Unpooled::wrappedBuffer));
         }).doOnNext(res -> {
                     exchange.getResponse().setStatusCode(HttpStatus.valueOf(res.status().code()));
                     return;
